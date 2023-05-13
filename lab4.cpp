@@ -76,15 +76,13 @@ void run(Table::iterator(*alg) (Table&)) {
     Command command;
     int resetCounter = 0;
     while (std::cin >> command.type >> command.VPN) {
-        if (resetCounter == 5) {
-            doReset(table);
-            resetCounter = 0;
-        }
     
         Table::iterator block = find(table, command.VPN);
         if (block == table.end()) {
-            for (auto p : table) {
-                if (p.R) p.counter = systemTime;
+            for (auto it = table.begin(); it < table.end(); it++) {
+                if (it->R) {
+                    it->counter = systemTime;
+                }
             }
             block = getBlockToReplace(table, alg);
             insert(table, block, command.VPN);
@@ -98,6 +96,11 @@ void run(Table::iterator(*alg) (Table&)) {
         }
 
         dprint(table);
+
+        if (resetCounter == 5) {
+            doReset(table);
+            resetCounter = 0;
+        }
         resetCounter++;
         systemTime++;
     }
