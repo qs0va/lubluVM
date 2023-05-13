@@ -187,20 +187,24 @@ Table::iterator WS(Table& table) {
         }
     }
 
-    for (int i = 0; i < subList.size(); i++) {
-        if (subList.at(i).M) {
-            subList.erase(subList.begin() + i);
-            i--;
+    bool hasNoM = false;
+    for (auto p : subList) {
+        if (!p.M) {
+            hasNoM = true;
+            break;
         }
     }
 
     int VPNToReplace;
-    if (!subList.empty()) {
-        VPNToReplace = subList.at(uniform_rnd(0, subList.size() - 1)).VPN;
+    if (hasNoM) {
+        for (int i = 0; i < subList.size(); i++) {
+            if (subList.at(i).M) {
+                subList.erase(subList.begin() + i);
+                i--;
+            }
+        }
     }
-    else {
-        VPNToReplace = table.at(uniform_rnd(0, SIZE - 1)).VPN;
-    }
+    VPNToReplace = subList.at(uniform_rnd(0, subList.size() - 1)).VPN;
 
     return find(table, VPNToReplace);
 }
