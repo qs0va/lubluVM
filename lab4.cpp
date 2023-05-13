@@ -1,6 +1,7 @@
 #include <iostream>
 #include <array>
 #include <queue>
+#include <string.h>
 
 #include "lab4.h"
 
@@ -43,21 +44,14 @@ Table::iterator WS(Table& table);
 unsigned int systemTime = 0;
 
 int main(int argc, char *argv[]) {
-    //if (argc > 1) {
-    //    if (strcmp("1", argv[1]) == 0) {
-    //        secondChance();
-    //    }
-    //    else if (strcmp("2", argv[1]) == 0) {
-    //        NFU();
-    //    }
-    //    else {
-    //        std::cout << "Wrong input\n";
-    //    }
-    //}
-    //else {
-    //    std::cout << "No input\n";
-    //}
-    run(WS);
+    if (argc > 1) {
+        if (strcmp("1", argv[1]) == 0) {
+            run(FIFO);
+        }
+        else if (strcmp("2", argv[1]) == 0) {
+            run(WS);
+        }
+    }
     return 0;
 }
 
@@ -96,12 +90,11 @@ void run(Table::iterator(*alg) (Table&)) {
             block->M = true;
         }
 
-        dprint(table);
+        print(table);
 
         resetCounter++;
         if (resetCounter == 5) {
             doReset(table);
-            std::cout << "reset\n";
             resetCounter = 0;
         }
         systemTime++;
