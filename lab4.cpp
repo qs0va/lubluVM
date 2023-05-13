@@ -38,7 +38,9 @@ Table::iterator getBlockToReplace(Table& table, Table::iterator(*alg) (Table&));
 Table::iterator getEmpty(Table& table);
 
 Table::iterator FIFO(Table& table);
+Table::iterator WS(Table& table);
 
+unsigned int systemTime = 0;
 
 int main(int argc, char *argv[]) {
     //if (argc > 1) {
@@ -84,7 +86,6 @@ void run(Table::iterator(*alg) (Table&)) {
             block = getBlockToReplace(table, alg);
             insert(table, block, command.VPN);
             block->M = false;
-            block->counter = 0;
         }
 
         block->R = true;
@@ -94,6 +95,7 @@ void run(Table::iterator(*alg) (Table&)) {
 
         dprint(table);
         resetCounter++;
+        systemTime++;
     }
 }
 
@@ -159,6 +161,43 @@ Table::iterator FIFO(Table& table) {
             break;
         }
     }
+    return iter;
+}
+
+Table::iterator WS(Table& table) {
+    for (auto p : table) {
+        if (p.R) p.counter = systemTime;
+    }
+
+    Table::iterator iter;
+    unsigned int maxAge = 0;
+    for (auto it = table.begin(); it < table.end(); it++) {
+        if (systemTime - it->counter > maxAge) {
+            maxAge = systemTime - it->counter;
+            iter = it;
+        }
+    }
+
+    if (!(maxAge > 0)) {
+        iter->counter = systemTime;
+        return iter;
+    }
+
+    std::vector<int> subList;
+    for (auto it = table.begin(); it < table.end(); it++) {
+        if (!(it->M)) subList.push_back(it->VPN);
+    }
+
+    int VPNToReplace;
+    if (!subList.empty()) {
+        VPNToReplace = subList.at(uniform_rnd(0, subList.size() - 1));
+    }
+    else {
+        VPNToReplace = table.at(uniform_rnd(0, SIZE - 1)).VPN;
+    }
+
+    iter = find(table, VPNToReplace);
+    iter->counter = systemTime;
     return iter;
 }
 
