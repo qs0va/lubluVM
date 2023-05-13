@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     //else {
     //    std::cout << "No input\n";
     //}
-    run(FIFO);
+    run(WS);
     return 0;
 }
 
@@ -83,9 +83,13 @@ void run(Table::iterator(*alg) (Table&)) {
     
         Table::iterator block = find(table, command.VPN);
         if (block == table.end()) {
+            for (auto p : table) {
+                if (p.R) p.counter = systemTime;
+            }
             block = getBlockToReplace(table, alg);
             insert(table, block, command.VPN);
             block->M = false;
+            block->counter = systemTime;
         }
 
         block->R = true;
@@ -134,7 +138,6 @@ Table::iterator find(Table& table, int VPN) {
 
 void doReset(Table& table) {
     for (auto it = table.begin(); it < table.end(); it++) {
-        it->counter += it->R;
         it->R = false;
     }
 }
@@ -165,10 +168,6 @@ Table::iterator FIFO(Table& table) {
 }
 
 Table::iterator WS(Table& table) {
-    for (auto p : table) {
-        if (p.R) p.counter = systemTime;
-    }
-
     Table::iterator iter;
     unsigned int maxAge = 0;
     for (auto it = table.begin(); it < table.end(); it++) {
@@ -178,8 +177,7 @@ Table::iterator WS(Table& table) {
         }
     }
 
-    if (!(maxAge > 0)) {
-        iter->counter = systemTime;
+    if (maxAge) {
         return iter;
     }
 
@@ -196,9 +194,7 @@ Table::iterator WS(Table& table) {
         VPNToReplace = table.at(uniform_rnd(0, SIZE - 1)).VPN;
     }
 
-    iter = find(table, VPNToReplace);
-    iter->counter = systemTime;
-    return iter;
+    return find(table, VPNToReplace);
 }
 
 
