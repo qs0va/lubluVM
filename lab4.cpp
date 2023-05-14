@@ -1,19 +1,17 @@
 #include <iostream>
 #include <array>
 #include <queue>
-#include <string.h>
 
 #include "lab4.h"
 
 #define READ 0
 #define WRITE 1
-#define SIZE 5
+#define SIZE 12
 
 struct PhysicalPage {
     int VPN;
     bool R;
     bool M;
-    int que;
     unsigned int counter;
 };
 
@@ -24,12 +22,64 @@ struct Command {
 
 typedef std::array<PhysicalPage, SIZE> Table;
 
+class CycleQueue {
+private:
+    class Node {
+    public:
+        int value;
+        Node* next;
+        Node* prev;
+
+        Node(int n, Node* prev, Node* next) {
+            value = n;
+            this->prev = prev;
+            this->next = next;
+        }
+    };
+
+    Node* head = nullptr;
+
+public:
+    void push(int n) {
+        if (head == nullptr) {
+            head = new Node(n, head, head);
+            head->next = head;
+            head->prev = head;
+        }
+        else {
+            Node* temp = head->prev;
+            head->prev = new Node(n, temp, head);
+            temp->next = head->prev;
+        }
+    }
+
+    int look() {
+        return head->value;
+    }
+
+    int pop() {
+        int out = head->value;
+        Node* temp = head;
+        head = temp->next;
+        temp->prev->next = head;
+        head->prev = temp->prev;
+
+        delete temp;
+        return out;
+    }
+
+    void headInc() {
+    if (head)
+        head = head->next;
+    }
+};
+
+CycleQueue que;
+
 void run(Table::iterator(*alg) (Table&));
 
 void print(const Table& table);
 void dprint(const Table& table);
-
-void insert(Table& table, const Table::iterator& iter, int VPN);
 
 void doReset(Table& table);
 
@@ -38,18 +88,17 @@ Table::iterator find(Table& table, int VPN);
 Table::iterator getBlockToReplace(Table& table, Table::iterator(*alg) (Table&));
 Table::iterator getEmpty(Table& table);
 
-Table::iterator FIFO(Table& table);
-Table::iterator WS(Table& table);
+Table::iterator clock(Table& table);
+Table::iterator NFU(Table& table);
 
-unsigned int systemTime = 0;
 
 int main(int argc, char *argv[]) {
     if (argc > 1) {
         if (strcmp("1", argv[1]) == 0) {
-            run(FIFO);
+            run(clock);
         }
         else if (strcmp("2", argv[1]) == 0) {
-            run(WS);
+            run(NFU);
         }
     }
     return 0;
@@ -61,7 +110,6 @@ void run(Table::iterator(*alg) (Table&)) {
     temp.VPN = -1;
     temp.R = false;
     temp.M = false;
-    temp.que = -1;
     temp.counter = 0;
     for (auto it = table.begin(); it < table.end(); it++) {
         *it = temp;
@@ -70,19 +118,18 @@ void run(Table::iterator(*alg) (Table&)) {
     Command command;
     int resetCounter = 0;
     while (std::cin >> command.type >> command.VPN) {
-
+        if (resetCounter == 5) {
+            doReset(table);
+            resetCounter = 0;
+        }
+    
         Table::iterator block = find(table, command.VPN);
         if (block == table.end()) {
-            for (auto it = table.begin(); it < table.end(); it++) {
-                if (it->R) {
-                    it->counter = systemTime;
-                }
-            }
-
             block = getBlockToReplace(table, alg);
-            insert(table, block, command.VPN);
+            block->VPN = command.VPN;
+            que.push(command.VPN);
             block->M = false;
-            block->counter = systemTime;
+            block->counter = 0;
         }
 
         block->R = true;
@@ -90,14 +137,8 @@ void run(Table::iterator(*alg) (Table&)) {
             block->M = true;
         }
 
-        print(table);
-
+        dprint(table);
         resetCounter++;
-        if (resetCounter == 5) {
-            doReset(table);
-            resetCounter = 0;
-        }
-        systemTime++;
     }
 }
 
@@ -136,6 +177,7 @@ Table::iterator find(Table& table, int VPN) {
 
 void doReset(Table& table) {
     for (auto it = table.begin(); it < table.end(); it++) {
+        it->counter += it->R;
         it->R = false;
     }
 }
@@ -153,60 +195,39 @@ Table::iterator getEmpty(Table& table) {
     return table.end();
 }
 
-
-Table::iterator FIFO(Table& table) {
-    Table::iterator iter;
-    for (auto it = table.begin(); it < table.end(); it++) {
-        if (it->que == 0) {
-            iter = it;
-            break;
+Table::iterator clock(Table& table) {
+    while (true) {
+        auto iter = find(table, que.look());
+        if (iter->R) {
+            iter->R = false;
+            que.headInc();
+        }
+        else {
+            que.pop();
+            return iter;
         }
     }
-    return iter;
 }
 
-Table::iterator WS(Table& table) {
-    unsigned int maxAge = 0;
-    for (auto it = table.begin(); it < table.end(); it++) {
-        if (systemTime - it->counter > maxAge) {
-            maxAge = systemTime - it->counter;
-        }
+Table::iterator NFU(Table& table) {
+    unsigned int minCounter = 4000000;
+    for (auto p : table) {
+        if (p.counter < minCounter) minCounter = p.counter;
     }
 
-    std::vector<PhysicalPage> subList;
-    for (auto it = table.begin(); it < table.end(); it++) {
-        if (systemTime - it->counter == maxAge) {
-            subList.push_back(*it);
-        }
-    }
-
-    bool hasNoM = false;
-    for (auto p : subList) {
-        if (!p.M) {
-            hasNoM = true;
-            break;
+    std::vector<int> subList;
+    for (auto p : table) {
+        if (p.counter == minCounter) {
+            subList.push_back(p.VPN);
         }
     }
 
     int VPNToReplace;
-    if (hasNoM) {
-        for (int i = 0; i < subList.size(); i++) {
-            if (subList.at(i).M) {
-                subList.erase(subList.begin() + i);
-                i--;
-            }
-        }
+    if (subList.size() > 1) {
+        VPNToReplace = subList.at(uniform_rnd(0, subList.size() - 1));
     }
-    VPNToReplace = subList.at(uniform_rnd(0, subList.size() - 1)).VPN;
-
+    else {
+        VPNToReplace = subList.at(0);
+    }
     return find(table, VPNToReplace);
-}
-
-
-void insert(Table& table, const Table::iterator& iter, int VPN) {
-    for (auto it = table.begin(); it < table.end(); it++) {
-        if (it->que != -1) it->que--;
-    }
-    iter->VPN = VPN;
-    iter->que = SIZE - 1;
 }
