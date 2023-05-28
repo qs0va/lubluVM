@@ -1,9 +1,7 @@
 name: test-FT
 
 on:
-  push:
-    paths:
-      - server.cpp
+  push
 
 jobs:
   test:
