@@ -16,3 +16,6 @@ jobs:
       
     - name: Test checks 
       run: test/test_checks.sh "serv.out"
+      
+    - name: Test checks 
+      run: test/test_dummy.sh "serv.out"
