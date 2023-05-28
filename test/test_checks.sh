@@ -1,13 +1,5 @@
 #!/bin/bash
 
-if [ -z $1 ]
-then
-	echo ""
-else
-	echo "Wrong filename"
-	exit 1
-fi
-
 echo "Testing not enought args"
 
 echo "Running command: " "./""$1"
