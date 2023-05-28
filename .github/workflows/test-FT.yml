@@ -8,12 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Hello
-      run: echo "Hello world" -> a.txt
-    - name: List files
-      run: ls
-    - name: try cat working
-      run: cat a.txt
-    - run: cat b.xtx
-    - name: Done
-      run: echo "Done"
+    - name: Git fetch
+      uses: actions/checkout@v1
+      
+    - name: Build
+      run: g++ server.cpp -o serv.out
+      
+    - name: Test checks 
+      run: test/test_checks.sh
