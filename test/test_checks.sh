@@ -2,10 +2,10 @@
 
 echo "Testing not enought args"
 
-echo "Running command: " "$1"
+echo "Running command: " "./""$1"
 echo "Program output: "
 sleep 5 && pkill mserv.out &
-"$1"
+"./""$1"
 
 if [ $? -eq 1 ]
 then
@@ -19,10 +19,10 @@ fi
 echo ""
 echo "Testing not number port"
 
-echo "Running command: " "$1" "qwer"
+echo "Running command: " "./""$1" "qwer"
 echo "Program output: "
 sleep 5 && pkill mserv.out &
-"$1" qwer
+"./""$1" qwer
 
 if [ $? -eq 1 ]
 then
@@ -36,10 +36,10 @@ fi
 echo ""
 echo "Testing invalid port"
 
-echo "Running command: " "$1" "12"
+echo "Running command: " "./""$1" "12"
 echo "Program output: "
 sleep 5 && pkill mserv.out &
-"$1" 12
+"./""$1" 12
 
 if [ $? -eq 1 ]
 then
