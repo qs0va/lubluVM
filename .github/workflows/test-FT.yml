@@ -1,0 +1,16 @@
+name: test-FT
+
+on:
+  push:
+    paths:
+      - server.cpp
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Hello
+      run: echo "Hello world"
+    - name: List files
+      run: ls
