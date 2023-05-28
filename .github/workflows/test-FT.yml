@@ -15,4 +15,4 @@ jobs:
       run: g++ server.cpp -o serv.out
       
     - name: Test checks 
-      run: test/test_checks.sh
+      run: test/test_checks.sh "..\serv.out"
